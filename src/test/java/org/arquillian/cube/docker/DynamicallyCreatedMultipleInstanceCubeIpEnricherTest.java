@@ -5,42 +5,51 @@ import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
 
+import org.arquillian.cube.ContainerObjectFactory;
+import org.arquillian.cube.CubeController;
 import org.arquillian.cube.CubeIp;
 import org.arquillian.cube.containerobject.Cube;
 import org.arquillian.cube.containerobject.Image;
 import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.After;
-import org.junit.Ignore;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(Arquillian.class)
-public class MultipleInstanceCubeIpEnricherTest {
+public class DynamicallyCreatedMultipleInstanceCubeIpEnricherTest {
 
-    @Cube
+    @ArquillianResource
+    private ContainerObjectFactory factory;
+
+    @ArquillianResource
+    private CubeController ccontroller;
+
     private TomcatContainer tomcat;
 
-    @CubeIp(containerName = TomcatContainer.CONTAINER_NAME)
-    private String tomcatAddr;
+    @Before
+    public void createTomcatContainer() {
+        tomcat = factory.createContainerObject(TomcatContainer.class);
+    }
 
     @After
-    public void resetTomcatAddr() {
-        tomcatAddr = null;
+    public void destroyTomcatContainer() {
+        tomcat = null;
+        ccontroller.stop(TomcatContainer.CONTAINER_NAME);
+        ccontroller.destroy(TomcatContainer.CONTAINER_NAME);
     }
 
     @Test
-    public void tomcat_container_instantiated() {
+    public void tomcat_container_instantiated_and_cubeip_assigned_1() {
         assertThat(tomcat, notNullValue());
-    }
-
-    @Test
-    public void tomcat_incontainer_cubeip_assigned() {
         assertThat(tomcat.getContainerAddr(), notNullValue());
     }
 
     @Test
-    public void tomcat_intest_cubeip_assigned() {
-        assertThat(tomcatAddr, notNullValue());
+    public void tomcat_container_instantiated_and_cubeip_assigned_2() {
+        assertThat(tomcat, notNullValue());
+        assertThat(tomcat.getContainerAddr(), notNullValue());
     }
 
     @Cube(TomcatContainer.CONTAINER_NAME)
